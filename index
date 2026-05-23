@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kovan Takip Sistemi</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f5f5f5; }
+    header { background:#ffcc00; padding:15px; text-align:center; font-size:1.5em; font-weight:bold; }
+    section { padding:15px; margin:10px; background:#fff; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+    h2 { font-size:1.2em; margin-bottom:10px; color:#444; }
+    ul { list-style:none; padding:0; }
+    ul li { background:#eee; margin:5px 0; padding:10px; border-radius:5px; }
+    .alert { background:#ff6666; color:#fff; padding:10px; border-radius:5px; margin-top:10px; text-align:center; }
+    canvas { max-width:100%; margin-bottom:20px; }
+    footer { text-align:center; padding:10px; font-size:0.9em; background:#ddd; }
+    .calendar { background:#e6f7ff; padding:10px; border-radius:5px; }
+    .calendar li { background:#cceeff; }
+  </style>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- QR Code Generator -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body>
+  <header>🐝 Kovan Takip Sistemi</header>
+
+  <section>
+    <h2>Gerçek Zamanlı Sensör Verileri</h2>
+    <canvas id="tempChart"></canvas>
+    <canvas id="humidityChart"></canvas>
+    <canvas id="weightChart"></canvas>
+    <div id="alerts"></div>
+  </section>
+
+  <section>
+    <h2>Kovan Kimlik (QR Kod)</h2>
+    <div id="qrcode"></div>
+  </section>
+
+  <section>
+    <h2>İlaçlama ve Bakım Takvimi</h2>
+    <ul class="calendar">
+      <li>25 Mayıs 2026 → Varroa kontrolü</li>
+      <li>1 Haziran 2026 → Kovan temizliği</li>
+      <li>10 Haziran 2026 → Besleme (şeker şurubu)</li>
+      <li>20 Haziran 2026 → Bal hasat hazırlığı</li>
+    </ul>
+  </section>
+
+  <footer>© 2026 Kovan Takip Sistemi</footer>
+
+  <script>
+    // Örnek sıcaklık verileri
+    const tempCtx = document.getElementById('tempChart').getContext('2d');
+    const tempData = [32, 34, 36, 38, 37];
+    new Chart(tempCtx, {
+      type: 'line',
+      data: {
+        labels: ['08:00','10:00','12:00','14:00','16:00'],
+        datasets: [{
+          label: 'Sıcaklık (°C)',
+          data: tempData,
+          borderColor: 'red',
+          fill: false
+        }]
+      }
+    });
+
+    // Örnek nem verileri
+    const humidityCtx = document.getElementById('humidityChart').getContext('2d');
+    const humidityData = [55, 60, 65, 70, 68];
+    new Chart(humidityCtx, {
+      type: 'line',
+      data: {
+        labels: ['08:00','10:00','12:00','14:00','16:00'],
+        datasets: [{
+          label: 'Nem (%)',
+          data: humidityData,
+          borderColor: 'blue',
+          fill: false
+        }]
+      }
+    });
+
+    // Örnek ağırlık verileri
+    const weightCtx = document.getElementById('weightChart').getContext('2d');
+    new Chart(weightCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Kovan 1','Kovan 2','Kovan 3'],
+        datasets: [{
+          label: 'Ağırlık (kg)',
+          data: [25, 30, 28],
+          backgroundColor: ['#ffcc00','#66ccff','#99cc66']
+        }]
+      }
+    });
+
+    // QR Kod oluşturma (kovan kimliği)
+    QRCode.toCanvas(document.getElementById('qrcode'), 'Kovan-001', function (error) {
+      if (error) console.error(error);
+    });
+
+    // Basit uyarı sistemi
+    const alertsDiv = document.getElementById('alerts');
+    if (Math.max(...tempData) > 37) {
+      alertsDiv.innerHTML = '<div class="alert">⚠️ Kritik Uyarı: Kovan sıcaklığı çok yüksek!</div>';
+    }
+    if (Math.max(...humidityData) > 65) {
+      alertsDiv.innerHTML += '<div class="alert">⚠️ Kritik Uyarı: Nem seviyesi çok yüksek!</div>';
+    }
+  </script>
+</body>
+</html>
