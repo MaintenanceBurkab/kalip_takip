@@ -139,50 +139,74 @@
     </div>
 
     <script>
-        // Örnek veri (daha sonra Google Sheets'ten çekilecek)
-        let kaliplar = [
-            { no: "K-001", tip: "JST 2.0", adet: 8, durum: "Aktif", konum: "Hat 3 - Pres 7", sonBakim: "2026-06-20", krimp: 45230 },
-            { no: "K-023", tip: "Sumitomo 1.5", adet: 3, durum: "Bakımda", konum: "Depo", sonBakim: "2026-05-15", krimp: 18900 }
-        ];
+     <script>
+const GS_URL = 'https://script.google.com/macros/s/AKfycby1Q9SiAHloAR_Y8tAe-o0ocDf_sUjoy3hWwKVWTHnhoMWq8TDdAzQTbwuR1cr3_JyguA/exec';
 
-        function renderTablo(data) {
-            const tbody = document.getElementById('tabloBody');
-            tbody.innerHTML = '';
-            
-            data.forEach(k => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${k.no}</strong></td>
-                    <td>${k.tip}</td>
-                    <td>${k.adet}</td>
-                    <td><span class="status ${k.durum.toLowerCase()}">${k.durum}</span></td>
-                    <td>${k.konum}</td>
-                    <td>${k.sonBakim}</td>
-                    <td>${k.krimp.toLocaleString()}</td>
-                    <td><button class="btn btn-primary" style="padding:6px 12px; font-size:0.9rem;">Detay</button></td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+let kaliplar = [];
 
-        function filtrele() {
-            const term = document.getElementById('arama').value.toLowerCase();
-            const filtered = kaliplar.filter(k => 
-                k.no.toLowerCase().includes(term) || 
-                k.tip.toLowerCase().includes(term) ||
-                k.konum.toLowerCase().includes(term)
-            );
-            renderTablo(filtered);
-        }
+// Tüm verileri Google Sheets'ten çek
+async function loadKaliplar() {
+    try {
+        const response = await fetch(GS_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "getAll" }),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        
+        // İlk satır başlık olduğu için atla
+        kaliplar = data.slice(1).map(row => ({
+            no: row[0] || '',
+            tip: row[3] || '',
+            adet: row[2] || 1,
+            durum: 'Aktif',           // Şimdilik sabit, sonra geliştireceğiz
+            konum: row[1] || '',
+            sonBakim: row[6] ? new Date(row[6]).toISOString().split('T')[0] : '-',
+            krimp: Math.floor(Math.random() * 50000) // Geçici
+        }));
+        
+        renderTablo(kaliplar);
+    } catch (error) {
+        console.error("Veri çekme hatası:", error);
+        alert("Veriler yüklenemedi. Sheet bağlantısını kontrol et.");
+    }
+}
 
-        function yenileTablo() {
-            renderTablo(kaliplar);
-        }
+// Tabloyu render et
+function renderTablo(data) {
+    const tbody = document.getElementById('tabloBody');
+    tbody.innerHTML = '';
+    
+    data.forEach(k => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${k.no}</strong></td>
+            <td>${k.tip}</td>
+            <td>${k.adet}</td>
+            <td><span class="status aktif">Aktif</span></td>
+            <td>${k.konum}</td>
+            <td>${k.sonBakim}</td>
+            <td>${k.krimp.toLocaleString()}</td>
+            <td><button class="btn btn-primary" style="padding:6px 12px; font-size:0.9rem;" onclick="kalipDetay('${k.no}')">Detay</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
-        // Sayfa yüklendiğinde
-        window.onload = () => {
-            renderTablo(kaliplar);
-        };
-    </script>
+function filtrele() {
+    const term = document.getElementById('arama').value.toLowerCase();
+    const filtered = kaliplar.filter(k => 
+        (k.no && k.no.toLowerCase().includes(term)) || 
+        (k.tip && k.tip.toLowerCase().includes(term)) ||
+        (k.konum && k.konum.toLowerCase().includes(term))
+    );
+    renderTablo(filtered);
+}
+
+// Sayfa yüklendiğinde
+window.onload = () => {
+    loadKaliplar();
+};
+</script>
 </body>
 </html>
