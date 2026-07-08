@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BURKAB — Kalıp Takip Sistemi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* Bakım sitesiyle aynı stil yapısını buraya koyacağız */
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            margin: 0;
+            background: #f4f6f9;
+            color: #333;
+        }
+        header {
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 { margin: 0; }
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-success { background: #16a34a; color: white; }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>BURKAB — Kalıp Takip Sistemi</h1>
+            <p>Terminal Krimpleme Kalıpları • 135 Adet</p>
+        </div>
+        <div>
+            <button class="btn btn-success" onclick="yeniKalipEkle()">
+                <i class="fas fa-plus"></i> Yeni Kalıp Ekle
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+        <h2>Kalıp Listesi</h2>
+        <input type="text" id="arama" placeholder="Kalıp No, Tip veya Makine ara..." 
+               style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 6px; border: 1px solid #ccc;">
+        
+        <table id="kalipTablo" style="width:100%; border-collapse: collapse; background: white;">
+            <thead>
+                <tr style="background:#1e40af; color:white;">
+                    <th>Kalıp No</th>
+                    <th>Tip / Terminal</th>
+                    <th>Adet</th>
+                    <th>Durum</th>
+                    <th>Konum / Makine</th>
+                    <th>Son Bakım</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- JS ile doldurulacak -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Buraya ilerleyen aşamalarda GS_URL entegrasyonunu ekleyeceğiz
+        console.log("Kalıp Takip Sistemi yüklendi - MaintenanceBurkab/kalip_takip");
+    </script>
+</body>
+</html>
