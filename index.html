@@ -131,54 +131,78 @@
     </div>
 
     <script>
-        const GS_URL = 'https://script.google.com/macros/s/AKfycbyjnqdU_B1AouDUVXiN-xBYku8ZqnEZxjEKqxSX12BSZD52XopH4bMgFlIb_Xsv9JXY5A/exec';
-        let kaliplar = [];
+    const GS_URL = 'https://script.google.com/macros/s/AKfycby1Q9SiAHloAR_Y8tAe-o0ocDf_sUjoy3hWwKVWTHnhoMWq8TDdAzQTbwuR1cr3_JyguA/exec';
+    let kaliplar = [];
 
-        async function loadKaliplar() {
-            document.getElementById('tabloBody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">Yükleniyor...</td></tr>';
+    async function loadKaliplar() {
+        const tbody = document.getElementById('tabloBody');
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:60px; color:#666;">Veriler yükleniyor...</td></tr>';
+
+        try {
+            const response = await fetch(GS_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: "getAll" })
+            });
+
+            const text = await response.text();
+            console.log("Gelen ham cevap:", text);
+
+            let data;
             try {
-                const res = await fetch(GS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "getAll" }),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const data = await res.json();
-                kaliplar = data.slice(1).map(r => ({
-                    no: r[0] || '',
-                    tip: r[3] || '',
-                    adet: r[2] || '',
-                    konum: r[1] || '',
-                    sonBakim: r[6] ? new Date(r[6]).toISOString().split('T')[0] : ''
-                }));
-                renderTablo(kaliplar);
+                data = JSON.parse(text);
             } catch(e) {
-                document.getElementById('tabloBody').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:red;">Veri yüklenemedi</td></tr>';
+                console.error("JSON parse hatası");
+                throw new Error("Geçersiz veri formatı");
             }
-        }
 
-        function renderTablo(data) {
-            document.getElementById('tabloBody').innerHTML = data.map(k => `
-                <tr>
-                    <td><strong>${k.no}</strong></td>
-                    <td>${k.tip}</td>
-                    <td>${k.adet}</td>
-                    <td>${k.konum}</td>
-                    <td>${k.sonBakim}</td>
-                    <td><span class="status" style="background:#d1fae5;color:#166534;">Aktif</span></td>
-                    <td><button class="btn btn-primary">Detay</button></td>
-                </tr>
-            `).join('');
-        }
+            kaliplar = data.slice(1).map(r => ({
+                no: r[0] || '',
+                tip: r[3] || '',
+                adet: r[2] || '',
+                konum: r[1] || '',
+                sonBakim: r[6] ? new Date(r[6]).toISOString().split('T')[0] : ''
+            }));
 
-        function filtrele() {
-            const term = document.getElementById('arama').value.toLowerCase();
-            const filtered = kaliplar.filter(k => 
-                (k.no + k.tip + k.konum).toLowerCase().includes(term)
-            );
-            renderTablo(filtered);
+            renderTablo(kaliplar);
+        } catch (error) {
+            console.error(error);
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:60px; color:red;">
+                Veri yüklenemedi.<br><small>${error.message}</small>
+            </td></tr>`;
         }
+    }
 
-        window.onload = loadKaliplar;
-    </script>
+    function renderTablo(data) {
+        const tbody = document.getElementById('tabloBody');
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px;">Henüz kayıt yok.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.map(k => `
+            <tr>
+                <td><strong>${k.no}</strong></td>
+                <td>${k.tip}</td>
+                <td>${k.adet}</td>
+                <td>${k.konum}</td>
+                <td>${k.sonBakim}</td>
+                <td><span class="status" style="background:#d1fae5; color:#166534; padding:4px 12px; border-radius:20px;">Aktif</span></td>
+                <td><button class="btn btn-primary" style="padding:8px 16px;">Detay</button></td>
+            </tr>
+        `).join('');
+    }
+
+    function filtrele() {
+        const term = document.getElementById('arama').value.toLowerCase();
+        const filtered = kaliplar.filter(k => 
+            (k.no + k.tip + k.konum).toLowerCase().includes(term)
+        );
+        renderTablo(filtered);
+    }
+
+    window.onload = loadKaliplar;
+</script>
 </body>
 </html>
