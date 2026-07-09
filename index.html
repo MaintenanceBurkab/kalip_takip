@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BURKAB — Kalıp Takip Sistemi</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'IBM Plex Sans', system-ui, sans-serif; background: #f4f6f9; color: #1f2937; }
+
+  .header { background: #0f172a; color: white; padding: 0 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); position: sticky; top: 0; z-index: 100; }
+  .header-inner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 76px; flex-wrap: wrap; gap: 10px; }
+  .brand { font-size: 20px; font-weight: 800; color: #f5c400; letter-spacing: 1.5px; }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+
+  .main { max-width: 1400px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+  .home-search { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .search-card { background: white; border-radius: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #e2e8f0; }
+  .search-card-head { padding: 18px 20px; background: #0f172a; color: white; display: flex; align-items: center; gap: 10px; font-weight: 800; }
+  .search-card-head i { color: #f5c400; }
+  .search-card-body { padding: 18px 20px; display: flex; gap: 10px; align-items: center; }
+  .search-card-body input { flex: 1; padding: 13px 15px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; }
+  .search-help { padding: 0 20px 18px; color: #64748b; font-size: 13px; }
+  @media (max-width: 900px) { .home-search { grid-template-columns: 1fr; } .fg { grid-template-columns: 1fr; } .terminal-grid { grid-template-columns: repeat(2,1fr); } }
+
+  .kritik-banner { background: #fee2e2; border: 1px solid #fca5a5; border-radius: 12px; padding: 14px 20px; display: none; align-items: center; gap: 12px; cursor: pointer; }
+  .kritik-banner.show { display: flex; }
+  .kritik-banner i { color: #dc2626; font-size: 20px; }
+  .kritik-banner .txt { font-weight: 700; color: #991b1b; }
+  .kritik-banner .txt small { display: block; font-weight: 500; color: #b91c1c; margin-top: 2px; }
+
+  .section { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+  .section-head { background: linear-gradient(to right, #1e2937, #334155); color: white; padding: 16px 24px; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .controls { padding: 20px 24px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .search-box { flex: 1; min-width: 280px; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #1e2937; color: white; padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; vertical-align: top; font-size: 14px; }
+  tr:hover { background: #f8fafc; }
+
+  .btn { padding: 9px 18px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-success { background: #f5c400; color: #1a1a1a; }
+  .btn-primary { background: #1e40af; color: white; }
+  .btn-danger { background: #dc2626; color: white; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-ghost { background: #e2e8f0; color: #1f2937; }
+
+  .status { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
+  .status-aktif { background: #d1fae5; color: #166534; }
+  .status-pasif { background: #e2e8f0; color: #475569; }
+
+  .terminal-badges { display: flex; flex-wrap: wrap; gap: 4px; max-width: 260px; }
+  .terminal-badge { background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe; border-radius: 5px; padding: 2px 7px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .terminal-badge.bos { background: #f1f5f9; color: #94a3b8; border-color: #e2e8f0; }
+
+  .actions-cell { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* Modal */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .overlay.show { display: flex; }
+  .modal { background: white; border-radius: 14px; width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .modal-head { background: #0f172a; color: white; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; }
+  .modal-head h3 { font-size: 16px; font-weight: 700; color: #f5c400; }
+  .modal-head .close { cursor: pointer; font-size: 20px; color: #94a3b8; }
+  .modal-body { padding: 22px 24px; display: flex; flex-direction: column; gap: 14px; }
+  .fg { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; display: block; }
+  .field input, .field select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+  .terminal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; justify-content: flex-end; }
+
+  .parca-row { display: grid; grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr 1.2fr auto; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+  .parca-row.kritik { background: #fef2f2; border-radius: 8px; padding: 10px 8px; margin: 4px 0; border-bottom: none; }
+  .parca-row.head { font-weight: 700; color: #64748b; font-size: 11px; text-transform: uppercase; }
+  .parca-alarm { color: #dc2626; font-weight: 700; font-size: 11px; }
+  .stok-pill { display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:999px; font-weight:800; font-size:12px; border:1px solid transparent; }
+  .stok-yesil { background:#dcfce7; color:#166534; border-color:#86efac; }
+  .stok-sari { background:#fef9c3; color:#854d0e; border-color:#fde047; }
+  .stok-kirmizi { background:#fee2e2; color:#991b1b; border-color:#fca5a5; }
+  .stok-not { display:block; margin-top:4px; font-size:11px; font-weight:700; }
+  .stok-not.yesil { color:#166534; }
+  .stok-not.sari { color:#a16207; }
+  .stok-not.kirmizi { color:#dc2626; }
+
+
+  .empty { text-align: center; padding: 50px; color: #94a3b8; }
+
+  .definition-tabs { background: white; border-radius: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; overflow: hidden; }
+  .tab-buttons { display: flex; gap: 0; background: #0f172a; }
+  .tab-btn { flex: 1; padding: 16px 18px; border: 0; background: #0f172a; color: #cbd5e1; font-weight: 800; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .tab-btn.active { background: #f5c400; color: #111827; }
+  .tab-panel { display: none; padding: 20px 24px; background: #fff; }
+  .tab-panel.active { display: block; }
+  .form-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .form-title h3 { font-size: 16px; color: #0f172a; }
+  .form-title small { color: #64748b; font-size: 12px; }
+  .inline-form { display: flex; flex-direction: column; gap: 14px; }
+  .form-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; padding-top: 8px; border-top: 1px solid #e2e8f0; }
+
+  .iatf-dashboard { display:grid; grid-template-columns: repeat(4,1fr); gap:14px; }
+  .iatf-card { background:white; border:1px solid #e2e8f0; border-radius:14px; padding:16px; box-shadow:0 4px 20px rgba(0,0,0,0.06); }
+  .iatf-card .label { color:#64748b; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; }
+  .iatf-card .value { font-size:28px; font-weight:900; color:#0f172a; margin-top:6px; }
+  .iatf-card .hint { font-size:12px; color:#64748b; margin-top:4px; }
+  .iatf-green { border-left:6px solid #22c55e; } .iatf-yellow { border-left:6px solid #eab308; } .iatf-red { border-left:6px solid #ef4444; } .iatf-blue { border-left:6px solid #3b82f6; }
+  .iatf-tabs { display:flex; flex-wrap:wrap; gap:8px; padding:14px; background:#f8fafc; border-bottom:1px solid #e2e8f0; }
+  .iatf-tab { border:0; border-radius:999px; padding:10px 14px; font-weight:800; cursor:pointer; background:#e2e8f0; color:#334155; }
+  .iatf-tab.active { background:#0f172a; color:#f5c400; }
+  .iatf-panel { display:none; padding:18px 22px; }
+  .iatf-panel.active { display:block; }
+  .mini-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .audit-log { font-size:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px; margin-top:10px; max-height:180px; overflow:auto; }
+  .doc-chip { display:inline-flex; align-items:center; gap:6px; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe; border-radius:999px; padding:6px 10px; margin:4px; font-size:12px; font-weight:700; }
+  @media (max-width: 900px) { .iatf-dashboard { grid-template-columns:1fr 1fr; } .mini-grid { grid-template-columns:1fr; } }
+  @media (max-width: 560px) { .iatf-dashboard { grid-template-columns:1fr; } }
+
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="brand"><i class="fas fa-cog"></i> BURKAB KALIP TAKİP</div>
+    <div class="header-actions">
+      <button class="btn btn-success" onclick="sekmeAc('kalipEkleTab')"><i class="fas fa-plus"></i> KALIP EKLE</button>
+      <button class="btn btn-primary" onclick="sekmeAc('makineEkleTab')"><i class="fas fa-industry"></i> MAKİNE EKLE</button>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- IATF 16949 DENETİM PANELİ -->
+  <div class="iatf-dashboard" id="iatfDashboard">
+    <div class="iatf-card iatf-green"><div class="label">Aktif Kalıp</div><div class="value" id="dashAktifKalip">0</div><div class="hint">Kalıp kartı izlenebilirliği</div></div>
+    <div class="iatf-card iatf-red"><div class="label">Kritik Stok</div><div class="value" id="dashKritikStok">0</div><div class="hint">Yedek parça risk alarmı</div></div>
+    <div class="iatf-card iatf-yellow"><div class="label">Açık Bakım</div><div class="value" id="dashAcikBakim">0</div><div class="hint">Planlı / plansız bakım kaydı</div></div>
+    <div class="iatf-card iatf-blue"><div class="label">Açık Aksiyon</div><div class="value" id="dashAcikAksiyon">0</div><div class="hint">CAPA / denetim aksiyonu</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><span><i class="fas fa-clipboard-check"></i> IATF 16949 DENETİM MODÜLLERİ</span><small>İzlenebilirlik · Bakım · Revizyon · Doküman · Audit Trail</small></div>
+    <div class="iatf-tabs">
+      <button class="iatf-tab active" onclick="iatfSekmeAc('bakimPanel', this)">Bakım Kaydı</button>
+      <button class="iatf-tab" onclick="iatfSekmeAc('shotPanel', this)">Shot Sayacı</button>
+      <button class="iatf-tab" onclick="iatfSekmeAc('revizyonPanel', this)">Revizyon</button>
+      <button class="iatf-tab" onclick="iatfSekmeAc('dokumanPanel', this)">Doküman</button>
+      <button class="iatf-tab" onclick="iatfSekmeAc('aksiyonPanel', this)">CAPA / Aksiyon</button>
+      <button class="iatf-tab" onclick="iatfRaporlariYukle();iatfSekmeAc('raporPanel', this)">Rapor</button>
+    </div>
+    <div id="bakimPanel" class="iatf-panel active">
+      <div class="mini-grid">
+        <div class="field"><label>Kalıp No</label><input id="bKalipNo" placeholder="BK01"></div>
+        <div class="field"><label>Bakım Tipi</label><select id="bTip"><option>Planlı Bakım</option><option>Plansız Bakım</option><option>Arıza</option><option>Temizlik</option><option>Revizyon</option></select></div>
+        <div class="field"><label>Durum</label><select id="bDurum"><option>AÇIK</option><option>KAPALI</option></select></div>
+      </div>
+      <div class="mini-grid" style="margin-top:12px">
+        <div class="field"><label>Yapılan İşlem</label><input id="bIslem" placeholder="Örn: pim değişimi, temizlik"></div>
+        <div class="field"><label>Yapan</label><input id="bYapan"></div>
+        <div class="field"><label>Onaylayan</label><input id="bOnaylayan"></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-success" onclick="bakimKaydet()"><i class="fas fa-save"></i> Bakım Kaydı Oluştur</button></div>
+    </div>
+    <div id="shotPanel" class="iatf-panel">
+      <div class="mini-grid">
+        <div class="field"><label>Kalıp No</label><input id="sKalipNo"></div>
+        <div class="field"><label>Eklenecek Shot</label><input type="number" id="sShot" value="0"></div>
+        <div class="field"><label>Bakım Limiti</label><input type="number" id="sLimit" value="250000"></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-success" onclick="shotKaydet()"><i class="fas fa-gauge-high"></i> Shot Güncelle</button></div>
+    </div>
+    <div id="revizyonPanel" class="iatf-panel">
+      <div class="mini-grid">
+        <div class="field"><label>Kalıp No</label><input id="rKalipNo"></div>
+        <div class="field"><label>Revizyon No</label><input id="rRevNo" placeholder="R01"></div>
+        <div class="field"><label>Onaylayan</label><input id="rOnaylayan"></div>
+      </div>
+      <div class="field" style="margin-top:12px"><label>Değişiklik Açıklaması</label><input id="rAciklama" placeholder="Ne değişti, neden değişti?"></div>
+      <div class="form-actions"><button class="btn btn-success" onclick="revizyonKaydet()"><i class="fas fa-code-branch"></i> Revizyon Kaydet</button></div>
+    </div>
+    <div id="dokumanPanel" class="iatf-panel">
+      <div class="mini-grid">
+        <div class="field"><label>Kalıp No</label><input id="dKalipNo"></div>
+        <div class="field"><label>Doküman Tipi</label><select id="dTip"><option>Teknik Resim</option><option>PDF Talimat</option><option>Kontrol Planı</option><option>PFMEA</option><option>Fotoğraf</option><option>3D Dosya</option></select></div>
+        <div class="field"><label>Drive / URL Linki</label><input id="dUrl" placeholder="https://..."></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-success" onclick="dokumanKaydet()"><i class="fas fa-file-arrow-up"></i> Doküman Bağla</button></div>
+      <div id="dokumanSonuc" class="audit-log">Dokümanlar kalıp numarasına göre raporda listelenir.</div>
+    </div>
+    <div id="aksiyonPanel" class="iatf-panel">
+      <div class="mini-grid">
+        <div class="field"><label>Konu</label><input id="aKonu" placeholder="Kritik stok, tekrar eden arıza..."></div>
+        <div class="field"><label>Sorumlu</label><input id="aSorumlu"></div>
+        <div class="field"><label>Hedef Tarih</label><input type="date" id="aHedef"></div>
+      </div>
+      <div class="field" style="margin-top:12px"><label>Aksiyon Açıklaması</label><input id="aAciklama"></div>
+      <div class="form-actions"><button class="btn btn-success" onclick="aksiyonKaydet()"><i class="fas fa-list-check"></i> Aksiyon Aç</button></div>
+    </div>
+    <div id="raporPanel" class="iatf-panel"><div id="iatfRaporAlani" class="audit-log">Rapor yüklemek için Rapor sekmesine tıklayın.</div></div>
+  </div>
+
+
+  <!-- KRİTİK PARÇA ALARMI -->
+  <div class="kritik-banner" id="kritikBanner" onclick="kritikPanelAc()">
+    <i class="fas fa-triangle-exclamation"></i>
+    <div class="txt">
+      <span id="kritikBannerBaslik">Kritik seviyede yedek parça var</span>
+      <small id="kritikBannerAlt"></small>
+    </div>
+  </div>
+
+  <div class="home-search">
+    <div class="search-card">
+      <div class="search-card-head"><i class="fas fa-magnifying-glass"></i> KALIP ARA</div>
+      <div class="search-card-body">
+        <input type="text" id="kalipArama" placeholder="Kalıp No, gövde no, dosya no, tip, üretici veya terminal no ara..." onkeyup="kalipAra()">
+        <button class="btn btn-primary" onclick="kalipAra()"><i class="fas fa-search"></i> Ara</button>
+      </div>
+      <div class="search-help">Kalıp seçince detaydan yedek parçalarına ulaşabilirsin.</div>
+    </div>
+
+    <div class="search-card">
+      <div class="search-card-head"><i class="fas fa-screwdriver-wrench"></i> YEDEK PARÇA ARA</div>
+      <div class="search-card-body">
+        <input type="text" id="parcaArama" placeholder="Parça adı, parça kodu, kalıp no veya tedarikçi ara..." onkeyup="yedekParcaAra()">
+        <button class="btn btn-primary" onclick="yedekParcaAra()"><i class="fas fa-search"></i> Ara</button>
+      </div>
+      <div class="search-help">Arama tüm kalıplara bağlı yedek parça kayıtlarında yapılır.</div>
+    </div>
+
+    <div class="search-card">
+      <div class="search-card-head"><i class="fas fa-plug"></i> TERMİNAL NO İLE KALIP ARA</div>
+      <div class="search-card-body">
+        <input type="text" id="terminalArama" placeholder="Terminal numarası yaz..." onkeyup="terminalNoAra()">
+        <button class="btn btn-primary" onclick="terminalNoAra()"><i class="fas fa-search"></i> Ara</button>
+      </div>
+      <div class="search-help">Kalıp kartındaki 1-7 terminal no alanlarının tamamında arama yapar.</div>
+    </div>
+  </div>
+
+  <div class="definition-tabs" id="tanimSekmeleri">
+    <div class="tab-buttons">
+      <button class="tab-btn active" id="btnKalipEkleTab" onclick="sekmeAc('kalipEkleTab')"><i class="fas fa-plus-circle"></i> KALIP EKLE</button>
+      <button class="tab-btn" id="btnMakineEkleTab" onclick="sekmeAc('makineEkleTab')"><i class="fas fa-industry"></i> MAKİNE EKLE</button>
+    </div>
+
+    <div class="tab-panel active" id="kalipEkleTab">
+      <div class="form-title">
+        <div>
+          <h3>Google Sheets / Kaliplar sütunlarına göre kalıp tanımı</h3>
+          <small>KalipNo, GovdeNo, DosyaNo, Tipi, BeslemeTipi, Uretici, Durum, Terminal1-7</small>
+        </div>
+      </div>
+      <div class="inline-form">
+        <div class="fg">
+          <div class="field"><label>KalipNo *</label><input type="text" id="fKalipNo" placeholder="BK01" style="text-transform:uppercase"></div>
+          <div class="field"><label>Durum</label><select id="fDurum"><option value="AKTİF">Aktif</option><option value="PASİF">Pasif</option></select></div>
+        </div>
+        <div class="fg">
+          <div class="field"><label>GovdeNo</label><input type="text" id="fGovdeNo"></div>
+          <div class="field"><label>DosyaNo</label><input type="text" id="fDosyaNo"></div>
+        </div>
+        <div class="fg">
+          <div class="field"><label>Tipi</label><select id="fTipi"><option value="pnömatik">Pnömatik</option><option value="mekanik">Mekanik</option><option value="hidrolik">Hidrolik</option></select></div>
+          <div class="field"><label>BeslemeTipi</label><select id="fBeslemeTipi"><option value="yan">Yan</option><option value="arka">Arka</option><option value="on">Ön</option></select></div>
+        </div>
+        <div class="field"><label>Uretici</label><input type="text" id="fUretici" placeholder="GMS"></div>
+        <div class="field">
+          <label>Terminal1 - Terminal7</label>
+          <div class="terminal-grid">
+            <input type="text" id="fTerminal1" placeholder="Terminal1"><input type="text" id="fTerminal2" placeholder="Terminal2"><input type="text" id="fTerminal3" placeholder="Terminal3"><input type="text" id="fTerminal4" placeholder="Terminal4"><input type="text" id="fTerminal5" placeholder="Terminal5"><input type="text" id="fTerminal6" placeholder="Terminal6"><input type="text" id="fTerminal7" placeholder="Terminal7">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-ghost" onclick="formTemizle('f')"><i class="fas fa-eraser"></i> Temizle</button>
+          <button class="btn btn-success" onclick="sekmeKalipKaydet('f')"><i class="fas fa-save"></i> Kalıbı Kaydet</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="makineEkleTab">
+      <div class="form-title">
+        <div>
+          <h3>Makine ekle / Kaliplar sayfasına makine bazlı tanım aç</h3>
+          <small>Bu form da aynı Kaliplar sütunlarına kayıt atar. Makine No, KalipNo alanına kaydedilir.</small>
+        </div>
+      </div>
+      <div class="inline-form">
+        <div class="fg">
+          <div class="field"><label>Makine No / KalipNo *</label><input type="text" id="mKalipNo" placeholder="MKN-01" style="text-transform:uppercase"></div>
+          <div class="field"><label>Durum</label><select id="mDurum"><option value="AKTİF">Aktif</option><option value="PASİF">Pasif</option></select></div>
+        </div>
+        <div class="fg">
+          <div class="field"><label>GovdeNo</label><input type="text" id="mGovdeNo" placeholder="Makine gövde no"></div>
+          <div class="field"><label>DosyaNo</label><input type="text" id="mDosyaNo" placeholder="Makine dosya no"></div>
+        </div>
+        <div class="fg">
+          <div class="field"><label>Tipi</label><select id="mTipi"><option value="makine">Makine</option><option value="pres">Pres</option><option value="montaj">Montaj</option><option value="özel">Özel</option></select></div>
+          <div class="field"><label>BeslemeTipi</label><select id="mBeslemeTipi"><option value="-">-</option><option value="yan">Yan</option><option value="arka">Arka</option><option value="on">Ön</option></select></div>
+        </div>
+        <div class="field"><label>Uretici</label><input type="text" id="mUretici" placeholder="Makine üreticisi"></div>
+        <div class="field">
+          <label>Terminal1 - Terminal7</label>
+          <div class="terminal-grid">
+            <input type="text" id="mTerminal1" placeholder="Terminal1"><input type="text" id="mTerminal2" placeholder="Terminal2"><input type="text" id="mTerminal3" placeholder="Terminal3"><input type="text" id="mTerminal4" placeholder="Terminal4"><input type="text" id="mTerminal5" placeholder="Terminal5"><input type="text" id="mTerminal6" placeholder="Terminal6"><input type="text" id="mTerminal7" placeholder="Terminal7">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-ghost" onclick="formTemizle('m')"><i class="fas fa-eraser"></i> Temizle</button>
+          <button class="btn btn-primary" onclick="sekmeKalipKaydet('m')"><i class="fas fa-save"></i> Makineyi Kaydet</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <span><i class="fas fa-tools"></i> KALIP ARAMA SONUÇLARI — <span id="kalipSayisi">0</span> ADET</span>
+      <button class="btn btn-success btn-sm" onclick="sekmeAc('kalipEkleTab')"><i class="fas fa-plus"></i> Yeni Kalıp</button>
+    </div>
+    <div class="controls">
+      <button class="btn btn-primary" onclick="loadKaliplar()"><i class="fas fa-sync"></i> Yenile</button>
+      <button class="btn btn-ghost" onclick="aramaTemizle()"><i class="fas fa-eraser"></i> Temizle</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Kalıp No</th>
+            <th>Gövde No</th>
+            <th>Dosya No</th>
+            <th>Tipi</th>
+            <th>Besleme</th>
+            <th>Üretici</th>
+            <th>Terminal No'ları</th>
+            <th>Durum</th>
+            <th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody id="tabloBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section" id="parcaSonucSection">
+    <div class="section-head">
+      <span><i class="fas fa-boxes-stacked"></i> YEDEK PARÇA ARAMA SONUÇLARI — <span id="parcaSayisi">0</span> ADET</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Kalıp No</th>
+            <th>Parça Adı</th>
+            <th>Parça Kodu</th>
+            <th>Stok</th>
+            <th>Kritik</th>
+            <th>Birim</th>
+            <th>Tedarikçi</th>
+            <th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody id="parcaSonucBody">
+          <tr><td colspan="8" class="empty">Yedek parça aramak için yukarıdaki alanı kullanın.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- KALIP EKLE/DÜZENLE MODAL -->
+<div class="overlay" id="kalipModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="kalipModalBaslik">Yeni Kalıp Ekle</h3>
+      <span class="close" onclick="kalipModalKapat()">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <div class="field">
+          <label>Kalıp No *</label>
+          <input type="text" id="kKalipNo" placeholder="BK01" style="text-transform:uppercase">
+        </div>
+        <div class="field">
+          <label>Durum</label>
+          <select id="kDurum">
+            <option value="AKTİF">Aktif</option>
+            <option value="PASİF">Pasif</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <div class="field">
+          <label>Gövde No</label>
+          <input type="text" id="kGovdeNo">
+        </div>
+        <div class="field">
+          <label>Dosya No</label>
+          <input type="text" id="kDosyaNo">
+        </div>
+      </div>
+      <div class="fg">
+        <div class="field">
+          <label>Tipi</label>
+          <select id="kTipi">
+            <option value="pnömatik">Pnömatik</option>
+            <option value="mekanik">Mekanik</option>
+            <option value="hidrolik">Hidrolik</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Besleme Tipi</label>
+          <select id="kBeslemeTipi">
+            <option value="yan">Yan</option>
+            <option value="arka">Arka</option>
+            <option value="on">Ön</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Üretici</label>
+        <input type="text" id="kUretici" placeholder="GMS">
+      </div>
+
+      <div class="field">
+        <label>Terminal No'ları (1-7)</label>
+        <div class="terminal-grid">
+          <input type="text" id="kTerminal1" placeholder="1">
+          <input type="text" id="kTerminal2" placeholder="2">
+          <input type="text" id="kTerminal3" placeholder="3">
+          <input type="text" id="kTerminal4" placeholder="4">
+          <input type="text" id="kTerminal5" placeholder="5">
+          <input type="text" id="kTerminal6" placeholder="6">
+          <input type="text" id="kTerminal7" placeholder="7">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="kalipModalKapat()">İptal</button>
+      <button class="btn btn-success" onclick="kalipKaydet()"><i class="fas fa-save"></i> Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- KALIP DETAY + YEDEK PARÇA MODAL -->
+<div class="overlay" id="detayModal">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-head">
+      <h3 id="detayModalBaslik">Kalıp Detayı</h3>
+      <span class="close" onclick="detayModalKapat()">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div id="detayKalipOzet" style="background:#f8fafc;border-radius:10px;padding:14px;font-size:13px;color:#475569"></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+        <strong style="font-size:14px">🔩 Yedek Parça Listesi</strong>
+        <button class="btn btn-success btn-sm" onclick="parcaFormAc()"><i class="fas fa-plus"></i> Parça Ekle</button>
+      </div>
+
+      <div id="parcaFormAlani" style="display:none;background:#f8fafc;border-radius:10px;padding:14px;gap:10px;flex-direction:column">
+        <div class="fg">
+          <div class="field"><label>Parça Adı *</label><input type="text" id="pParcaAdi"></div>
+          <div class="field"><label>Parça Kodu</label><input type="text" id="pParcaKodu"></div>
+        </div>
+        <div class="fg">
+          <div class="field"><label>Mevcut Stok</label><input type="number" id="pMevcutStok" min="0" value="0"></div>
+          <div class="field"><label>Min / Kritik Seviye</label><input type="number" id="pKritikSeviye" min="1" value="1"></div>
+        </div>
+        <div class="fg">
+          <div class="field"><label>Birim</label><input type="text" id="pBirim" value="adet"></div>
+          <div class="field"><label>Tedarikçi</label><input type="text" id="pTedarikci"></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-ghost btn-sm" onclick="parcaFormKapat()">İptal</button>
+          <button class="btn btn-success btn-sm" onclick="parcaKaydet()"><i class="fas fa-save"></i> Kaydet</button>
+        </div>
+      </div>
+
+      <div id="parcaListesi"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="detayModalKapat()">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<!-- KRİTİK PARÇALAR PANELİ -->
+<div class="overlay" id="kritikModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head">
+      <h3><i class="fas fa-triangle-exclamation"></i> Kritik Seviyedeki Parçalar</h3>
+      <span class="close" onclick="kritikPanelKapat()">&times;</span>
+    </div>
+    <div class="modal-body" id="kritikModalIcerik"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="kritikPanelKapat()">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const GS_URL = 'https://script.google.com/macros/s/AKfycbyon9JL6Li6NdAEW_zUY561_L268-1OQ4_rU8Gx-ISpQT7LxKaQz16FX_V-TjTuuEaiKQ/exec';
+
+let kaliplar = [];
+let kritikParcalar = [];
+let tumYedekParcalar = [];
+let aktifDetayKalipNo = null;
+let duzenlemeModu = false;
+
+// ── Ana sayfa sekmeleri: Kalıp Ekle / Makine Ekle ───────────────
+function sekmeAc(tabId) {
+  ['kalipEkleTab', 'makineEkleTab'].forEach(id => {
+    const panel = document.getElementById(id);
+    const btn = document.getElementById('btn' + id.charAt(0).toUpperCase() + id.slice(1));
+    if (panel) panel.classList.toggle('active', id === tabId);
+    if (btn) btn.classList.toggle('active', id === tabId);
+  });
+  const alan = document.getElementById('tanimSekmeleri');
+  if (alan) alan.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function formTemizle(prefix) {
+  ['KalipNo','GovdeNo','DosyaNo','Uretici'].forEach(name => {
+    const el = document.getElementById(prefix + name);
+    if (el) el.value = '';
+  });
+  const durum = document.getElementById(prefix + 'Durum');
+  if (durum) durum.value = 'AKTİF';
+  const tipi = document.getElementById(prefix + 'Tipi');
+  if (tipi) tipi.selectedIndex = 0;
+  const besleme = document.getElementById(prefix + 'BeslemeTipi');
+  if (besleme) besleme.selectedIndex = 0;
+  for (let i = 1; i <= 7; i++) {
+    const el = document.getElementById(prefix + 'Terminal' + i);
+    if (el) el.value = '';
+  }
+}
+
+async function sekmeKalipKaydet(prefix) {
+  const kalipNoEl = document.getElementById(prefix + 'KalipNo');
+  const kalipNo = kalipNoEl ? kalipNoEl.value.trim().toUpperCase() : '';
+  if (!kalipNo) {
+    alert(prefix === 'm' ? 'Makine No zorunludur.' : 'Kalıp No zorunludur.');
+    return;
+  }
+
+  const terminaller = [];
+  for (let i = 1; i <= 7; i++) {
+    terminaller.push((document.getElementById(prefix + 'Terminal' + i)?.value || '').trim());
+  }
+
+  const kalip = {
+    kalipNo,
+    govdeNo: (document.getElementById(prefix + 'GovdeNo')?.value || '').trim(),
+    dosyaNo: (document.getElementById(prefix + 'DosyaNo')?.value || '').trim(),
+    tipi: document.getElementById(prefix + 'Tipi')?.value || '',
+    beslemeTipi: document.getElementById(prefix + 'BeslemeTipi')?.value || '',
+    uretici: (document.getElementById(prefix + 'Uretici')?.value || '').trim(),
+    durum: document.getElementById(prefix + 'Durum')?.value || 'AKTİF',
+    terminaller
+  };
+
+  try {
+    const sonuc = await gsCagir('saveKalip', { kalip });
+    if (!sonuc.ok) throw new Error(sonuc.error || 'Kaydedilemedi');
+    alert((prefix === 'm' ? 'Makine' : 'Kalıp') + ' kaydedildi: ' + kalipNo);
+    formTemizle(prefix);
+    await loadKaliplar();
+  } catch (err) {
+    alert('❌ ' + err.message);
+  }
+}
+
+
+// ── GAS çağrısı: GET + JSONP ───────────────────────────────────
+function gsCagir(action, extra) {
+  return new Promise((resolve, reject) => {
+    const payload = Object.assign({ action }, extra || {});
+    const callbackName = 'gasCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+
+    window[callbackName] = function (sonuc) {
+      cleanup();
+      resolve(sonuc);
+    };
+
+    function cleanup() {
+      if (script && script.parentNode) script.parentNode.removeChild(script);
+      try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
+    }
+
+    const script = document.createElement('script');
+    const params = new URLSearchParams({
+      action: action,
+      payload: JSON.stringify(payload),
+      callback: callbackName,
+      _: Date.now().toString()
+    });
+
+    script.src = GS_URL + '?' + params.toString();
+    script.onerror = function () {
+      cleanup();
+      reject(new Error('GAS bağlantısı kurulamadı. Web App dağıtımını ve erişim iznini kontrol edin.'));
+    };
+
+    document.body.appendChild(script);
+
+    setTimeout(() => {
+      if (window[callbackName]) {
+        cleanup();
+        reject(new Error('GAS cevap vermedi veya callback çalışmadı.'));
+      }
+    }, 20000);
+  });
+}
+
+// ── KALIPLAR: Listeleme ──────────────────────────────────────────
+async function loadKaliplar() {
+  const tbody = document.getElementById('tabloBody');
+  tbody.innerHTML = `<tr><td colspan="9" class="empty">Veriler yükleniyor...</td></tr>`;
+  try {
+    const sonuc = await gsCagir('getKaliplar');
+    if (!sonuc.ok) throw new Error(sonuc.error || 'Bilinmeyen hata');
+    kaliplar = sonuc.data || [];
+    renderTablo(kaliplar);
+    document.getElementById('kalipSayisi').textContent = kaliplar.length;
+    kritikKontrolEt();
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty" style="color:#dc2626">Veri yüklenemedi.<br><small>${err.message}</small></td></tr>`;
+  }
+}
+
+function terminalBadges(terminaller) {
+  return (terminaller || []).map((t, i) => {
+    if (!t) return `<span class="terminal-badge bos">${i+1}: —</span>`;
+    return `<span class="terminal-badge">${i+1}: ${t}</span>`;
+  }).join('');
+}
+
+function renderTablo(data) {
+  const tbody = document.getElementById('tabloBody');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty">Henüz kayıt yok.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(k => `
+    <tr>
+      <td><strong>${k.kalipNo}</strong></td>
+      <td>${k.govdeNo || '—'}</td>
+      <td>${k.dosyaNo || '—'}</td>
+      <td>${k.tipi || '—'}</td>
+      <td>${k.beslemeTipi || '—'}</td>
+      <td>${k.uretici || '—'}</td>
+      <td><div class="terminal-badges">${terminalBadges(k.terminaller)}</div></td>
+      <td><span class="status ${k.durum === 'PASİF' ? 'status-pasif' : 'status-aktif'}">${k.durum || 'AKTİF'}</span></td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn btn-primary btn-sm" onclick="detayAc('${k.kalipNo}')"><i class="fas fa-eye"></i> Detay</button>
+          <button class="btn btn-ghost btn-sm" onclick="kalipDuzenle('${k.kalipNo}')"><i class="fas fa-pen"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="kalipSil('${k.kalipNo}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function kalipAra() {
+  const term = document.getElementById('kalipArama').value.toLowerCase().trim();
+  if (document.getElementById('terminalArama')) document.getElementById('terminalArama').value = '';
+
+  const filtered = !term ? kaliplar : kaliplar.filter(k =>
+    [k.kalipNo, k.govdeNo, k.dosyaNo, k.tipi, k.beslemeTipi, k.uretici, ...(k.terminaller || [])]
+      .join(' ')
+      .toLowerCase()
+      .includes(term)
+  );
+  renderTablo(filtered);
+  document.getElementById('kalipSayisi').textContent = filtered.length;
+}
+
+function terminalNoAra() {
+  const input = document.getElementById('terminalArama');
+  const term = (input ? input.value : '').toLowerCase().trim();
+
+  if (document.getElementById('kalipArama')) document.getElementById('kalipArama').value = '';
+
+  const filtered = !term ? kaliplar : kaliplar.filter(k =>
+    (k.terminaller || [])
+      .map(t => String(t || '').toLowerCase().trim())
+      .some(t => t.includes(term))
+  );
+
+  renderTablo(filtered);
+  document.getElementById('kalipSayisi').textContent = filtered.length;
+}
+
+function aramaTemizle() {
+  document.getElementById('kalipArama').value = '';
+  document.getElementById('parcaArama').value = '';
+  if (document.getElementById('terminalArama')) document.getElementById('terminalArama').value = '';
+  renderTablo(kaliplar);
+  document.getElementById('kalipSayisi').textContent = kaliplar.length;
+  renderParcaSonuclari([]);
+}
+
+async function yedekParcaAra() {
+  const term = document.getElementById('parcaArama').value.toLowerCase().trim();
+  const tbody = document.getElementById('parcaSonucBody');
+
+  if (!term) {
+    renderParcaSonuclari([]);
+    return;
+  }
+
+  tbody.innerHTML = `<tr><td colspan="8" class="empty">Yedek parçalar aranıyor...</td></tr>`;
+
+  try {
+    if (!tumYedekParcalar.length) {
+      const sonuc = await gsCagir('getYedekParcalar');
+      if (!sonuc.ok) throw new Error(sonuc.error || 'Yedek parça verisi alınamadı');
+      tumYedekParcalar = sonuc.data || [];
+    }
+
+    const filtered = tumYedekParcalar.filter(p =>
+      [p.kalipNo, p.parcaAdi, p.parcaKodu, p.tedarikci, p.birim]
+        .join(' ')
+        .toLowerCase()
+        .includes(term)
+    );
+    renderParcaSonuclari(filtered);
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty" style="color:#dc2626">Yedek parça araması yapılamadı.<br><small>${err.message}</small></td></tr>`;
+  }
+}
+
+
+function stokDurumuHesapla(stok) {
+  stok = Number(stok) || 0;
+  if (stok >= 3) return { sinif: 'stok-yesil', renk: 'yesil', metin: 'YETERLİ', ikon: '🟢' };
+  if (stok === 2) return { sinif: 'stok-sari', renk: 'sari', metin: 'UYARI', ikon: '🟡' };
+  return { sinif: 'stok-kirmizi', renk: 'kirmizi', metin: 'KRİTİK', ikon: '🔴' };
+}
+
+function stokPillHTML(stok) {
+  const d = stokDurumuHesapla(stok);
+  return `<span class="stok-pill ${d.sinif}">${d.ikon} ${Number(stok) || 0}</span><span class="stok-not ${d.renk}">${d.metin}</span>`;
+}
+
+function renderParcaSonuclari(data) {
+  const tbody = document.getElementById('parcaSonucBody');
+  document.getElementById('parcaSayisi').textContent = data.length;
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">Yedek parça aramak için yukarıdaki alanı kullanın.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map(p => {
+    const stokDurum = stokDurumuHesapla(p.mevcutStok);
+    const kritikMi = stokDurum.renk === 'kirmizi' || (Number(p.kritikSeviye) > 0 && Number(p.mevcutStok) <= Number(p.kritikSeviye));
+    return `
+      <tr class="${stokDurum.renk === 'kirmizi' ? 'stok-kritik-row' : ''}">
+        <td><strong>${p.kalipNo || '—'}</strong></td>
+        <td>${p.parcaAdi || '—'} ${kritikMi ? '<div class="parca-alarm">⚠ KRİTİK SEVİYE</div>' : ''}</td>
+        <td>${p.parcaKodu || '—'}</td>
+        <td>${stokPillHTML(p.mevcutStok)}</td>
+        <td>${p.kritikSeviye || 1}</td>
+        <td>${p.birim || 'adet'}</td>
+        <td>${p.tedarikci || '—'}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="detayAc('${p.kalipNo}')"><i class="fas fa-eye"></i> Kalıbı Aç</button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ── KALIP: Ekle / Düzenle ────────────────────────────────────────
+function yeniKalipModal() {
+  duzenlemeModu = false;
+  document.getElementById('kalipModalBaslik').textContent = 'Yeni Kalıp Ekle';
+  ['kKalipNo','kGovdeNo','kDosyaNo','kUretici'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('kDurum').value = 'AKTİF';
+  document.getElementById('kTipi').value = 'pnömatik';
+  document.getElementById('kBeslemeTipi').value = 'yan';
+  for (let i = 1; i <= 7; i++) document.getElementById('kTerminal' + i).value = '';
+  document.getElementById('kKalipNo').disabled = false;
+  document.getElementById('kalipModal').classList.add('show');
+}
+
+function kalipDuzenle(kalipNo) {
+  const k = kaliplar.find(x => x.kalipNo === kalipNo);
+  if (!k) return;
+  duzenlemeModu = true;
+  document.getElementById('kalipModalBaslik').textContent = 'Kalıbı Düzenle — ' + kalipNo;
+  document.getElementById('kKalipNo').value = k.kalipNo;
+  document.getElementById('kKalipNo').disabled = true; // KalıpNo birincil anahtar, değiştirilemez
+  document.getElementById('kGovdeNo').value = k.govdeNo || '';
+  document.getElementById('kDosyaNo').value = k.dosyaNo || '';
+  document.getElementById('kTipi').value = k.tipi || 'pnömatik';
+  document.getElementById('kBeslemeTipi').value = k.beslemeTipi || 'yan';
+  document.getElementById('kUretici').value = k.uretici || '';
+  document.getElementById('kDurum').value = k.durum || 'AKTİF';
+  const t = k.terminaller || [];
+  for (let i = 1; i <= 7; i++) document.getElementById('kTerminal' + i).value = t[i-1] || '';
+  document.getElementById('kalipModal').classList.add('show');
+}
+
+function kalipModalKapat() {
+  document.getElementById('kalipModal').classList.remove('show');
+}
+
+async function kalipKaydet() {
+  const kalipNo = document.getElementById('kKalipNo').value.trim().toUpperCase();
+  if (!kalipNo) { alert('Kalıp No zorunludur.'); return; }
+
+  const terminaller = [];
+  for (let i = 1; i <= 7; i++) terminaller.push(document.getElementById('kTerminal' + i).value.trim());
+
+  const kalip = {
+    kalipNo,
+    govdeNo: document.getElementById('kGovdeNo').value.trim(),
+    dosyaNo: document.getElementById('kDosyaNo').value.trim(),
+    tipi: document.getElementById('kTipi').value,
+    beslemeTipi: document.getElementById('kBeslemeTipi').value,
+    uretici: document.getElementById('kUretici').value.trim(),
+    durum: document.getElementById('kDurum').value,
+    terminaller
+  };
+
+  try {
+    const sonuc = await gsCagir('saveKalip', { kalip });
+    if (!sonuc.ok) throw new Error(sonuc.error || 'Kaydedilemedi');
+    kalipModalKapat();
+    await loadKaliplar();
+  } catch (err) {
+    alert('❌ ' + err.message);
+  }
+}
+
+async function kalipSil(kalipNo) {
+  if (!confirm(kalipNo + ' kalıbını silmek istediğinize emin misiniz? Bağlı yedek parça kayıtları silinmez, elle temizlemeniz gerekebilir.')) return;
+  try {
+    const sonuc = await gsCagir('deleteKalip', { kalipNo });
+    if (!sonuc.ok) throw new Error(sonuc.error || 'Silinemedi');
+    await loadKaliplar();
+  } catch (err) {
+    alert('❌ ' + err.message);
+  }
+}
+
+// ── KALIP DETAY + YEDEK PARÇA ────────────────────────────────────
+async function detayAc(kalipNo) {
+  aktifDetayKalipNo = kalipNo;
+  const k = kaliplar.find(x => x.kalipNo === kalipNo);
+  if (!k) return;
+
+  document.getElementById('detayModalBaslik').textContent = 'Kalıp Detayı — ' + kalipNo;
+  document.getElementById('detayKalipOzet').innerHTML = `
+    <strong>${k.kalipNo}</strong> · ${k.tipi || '—'} · ${k.beslemeTipi || '—'} besleme · ${k.uretici || '—'}<br>
+    Gövde No: ${k.govdeNo || '—'} &nbsp;|&nbsp; Dosya No: ${k.dosyaNo || '—'} &nbsp;|&nbsp;
+    Durum: <span class="status ${k.durum === 'PASİF' ? 'status-pasif' : 'status-aktif'}">${k.durum || 'AKTİF'}</span><br>
+    <div class="terminal-badges" style="margin-top:8px">${terminalBadges(k.terminaller)}</div>
+  `;
+
+  parcaFormKapat();
+  document.getElementById('detayModal').classList.add('show');
+  await parcaListesiYukle();
+}
+
+function detayModalKapat() {
+  document.getElementById('detayModal').classList.remove('show');
+  aktifDetayKalipNo = null;
+}
+
+async function parcaListesiYukle() {
+  const div = document.getElementById('parcaListesi');
+  div.innerHTML = `<div class="empty">Yükleniyor...</div>`;
+  try {
+    const sonuc = await gsCagir('getYedekParcalar', { kalipNo: aktifDetayKalipNo });
+    if (!sonuc.ok) throw new Error(sonuc.error);
+    const parcalar = sonuc.data || [];
+    if (!parcalar.length) {
+      div.innerHTML = `<div class="empty">Bu kalıp için henüz yedek parça kaydı yok.</div>`;
+      return;
+    }
+    div.innerHTML = `
+      <div class="parca-row head">
+        <span>Parça Adı</span><span>Kodu</span><span>Stok</span><span>Kritik</span><span>Birim</span><span>Tedarikçi</span><span></span>
+      </div>
+    ` + parcalar.map(p => {
+      const stokDurum = stokDurumuHesapla(p.mevcutStok);
+      const kritikMi = stokDurum.renk === 'kirmizi' || (Number(p.kritikSeviye) > 0 && Number(p.mevcutStok) <= Number(p.kritikSeviye));
+      return `
+        <div class="parca-row ${kritikMi ? 'kritik' : ''}">
+          <span>${p.parcaAdi}${kritikMi ? '<div class="parca-alarm">⚠ KRİTİK SEVİYE</div>' : ''}</span>
+          <span>${p.parcaKodu || '—'}</span>
+          <span>${stokPillHTML(p.mevcutStok)}</span>
+          <span>${p.kritikSeviye || 1}</span>
+          <span>${p.birim}</span>
+          <span>${p.tedarikci || '—'}</span>
+          <span class="actions-cell">
+            <button class="btn btn-ghost btn-sm" onclick="parcaDuzenle('${p.id}')"><i class="fas fa-pen"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="parcaSil('${p.id}')"><i class="fas fa-trash"></i></button>
+          </span>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    div.innerHTML = `<div class="empty" style="color:#dc2626">Yüklenemedi: ${err.message}</div>`;
+  }
+}
+
+let duzenlenenParcaId = null;
+
+function parcaFormAc() {
+  duzenlenenParcaId = null;
+  ['pParcaAdi','pParcaKodu','pTedarikci'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pMevcutStok').value = 0;
+  document.getElementById('pKritikSeviye').value = 1;
+  document.getElementById('pBirim').value = 'adet';
+  document.getElementById('parcaFormAlani').style.display = 'flex';
+}
+
+function parcaFormKapat() {
+  document.getElementById('parcaFormAlani').style.display = 'none';
+  duzenlenenParcaId = null;
+}
+
+async function parcaDuzenle(id) {
+  const sonuc = await gsCagir('getYedekParcalar', { kalipNo: aktifDetayKalipNo });
+  const p = (sonuc.data || []).find(x => x.id === id);
+  if (!p) return;
+  duzenlenenParcaId = id;
+  document.getElementById('pParcaAdi').value = p.parcaAdi;
+  document.getElementById('pParcaKodu').value = p.parcaKodu || '';
+  document.getElementById('pMevcutStok').value = p.mevcutStok;
+  document.getElementById('pKritikSeviye').value = p.kritikSeviye;
+  document.getElementById('pBirim').value = p.birim || 'adet';
+  document.getElementById('pTedarikci').value = p.tedarikci || '';
+  document.getElementById('parcaFormAlani').style.display = 'flex';
+}
+
+async function parcaKaydet() {
+  const parcaAdi = document.getElementById('pParcaAdi').value.trim();
+  if (!parcaAdi) { alert('Parça adı zorunludur.'); return; }
+
+  const parca = {
+    id: duzenlenenParcaId || undefined,
+    kalipNo: aktifDetayKalipNo,
+    parcaAdi,
+    parcaKodu: document.getElementById('pParcaKodu').value.trim(),
+    mevcutStok: Number(document.getElementById('pMevcutStok').value) || 0,
+    kritikSeviye: Number(document.getElementById('pKritikSeviye').value) || 1,
+    birim: document.getElementById('pBirim').value.trim() || 'adet',
+    tedarikci: document.getElementById('pTedarikci').value.trim()
+  };
+
+  try {
+    const sonuc = await gsCagir('saveYedekParca', { parca });
+    if (!sonuc.ok) throw new Error(sonuc.error || 'Kaydedilemedi');
+    parcaFormKapat();
+    tumYedekParcalar = [];
+    tumYedekParcalar = [];
+    await parcaListesiYukle();
+    kritikKontrolEt();
+  } catch (err) {
+    alert('❌ ' + err.message);
+  }
+}
+
+async function parcaSil(id) {
+  if (!confirm('Bu yedek parça kaydını silmek istediğinize emin misiniz?')) return;
+  try {
+    const sonuc = await gsCagir('deleteYedekParca', { id });
+    if (!sonuc.ok) throw new Error(sonuc.error || 'Silinemedi');
+    tumYedekParcalar = [];
+    tumYedekParcalar = [];
+    await parcaListesiYukle();
+    kritikKontrolEt();
+  } catch (err) {
+    alert('❌ ' + err.message);
+  }
+}
+
+// ── KRİTİK STOK ALARMI (genel) ────────────────────────────────────
+async function kritikKontrolEt() {
+  try {
+    const sonuc = await gsCagir('getKritikParcalar');
+    if (!sonuc.ok) return;
+    kritikParcalar = sonuc.data || [];
+    const banner = document.getElementById('kritikBanner');
+    if (kritikParcalar.length > 0) {
+      banner.classList.add('show');
+      document.getElementById('kritikBannerBaslik').textContent =
+        `🔴 ${kritikParcalar.length} yedek parça kritik stok seviyesinde`;
+      document.getElementById('kritikBannerAlt').textContent =
+        kritikParcalar.slice(0, 4).map(p => `${p.kalipNo}: ${p.parcaAdi}`).join(' · ') +
+        (kritikParcalar.length > 4 ? ' ...' : '') + ' — detay için tıklayın';
+    } else {
+      banner.classList.remove('show');
+    }
+  } catch (err) { /* sessiz geç */ }
+}
+
+function kritikPanelAc() {
+  const div = document.getElementById('kritikModalIcerik');
+  if (!kritikParcalar.length) {
+    div.innerHTML = `<div class="empty">Kritik seviyede parça yok. 🎉</div>`;
+  } else {
+    div.innerHTML = kritikParcalar.map(p => `
+      <div class="parca-row kritik" style="grid-template-columns:1fr 1fr 1fr 1fr">
+        <span><strong>${p.kalipNo}</strong><br>${p.parcaAdi}</span>
+        <span>Stok: ${stokPillHTML(p.mevcutStok)} ${p.birim}</span>
+        <span>Kritik: ${p.kritikSeviye} ${p.birim}</span>
+        <span>${p.tedarikci || '—'}</span>
+      </div>
+    `).join('');
+  }
+  document.getElementById('kritikModal').classList.add('show');
+}
+
+function kritikPanelKapat() {
+  document.getElementById('kritikModal').classList.remove('show');
+}
+
+// ── IATF 16949 DENETİM MODÜLLERİ ───────────────────────────────
+function iatfSekmeAc(panelId, btn) {
+  document.querySelectorAll('.iatf-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.iatf-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+function formDegeri(id) { return (document.getElementById(id)?.value || '').trim(); }
+
+async function bakimKaydet() {
+  const kayit = { kalipNo: formDegeri('bKalipNo').toUpperCase(), tip: formDegeri('bTip'), durum: formDegeri('bDurum'), islem: formDegeri('bIslem'), yapan: formDegeri('bYapan'), onaylayan: formDegeri('bOnaylayan') };
+  if (!kayit.kalipNo || !kayit.islem) { alert('Kalıp No ve yapılan işlem zorunludur.'); return; }
+  const sonuc = await gsCagir('saveBakimKaydi', { kayit });
+  if (!sonuc.ok) return alert('❌ ' + sonuc.error);
+  alert('Bakım kaydı oluşturuldu.'); iatfDashboardYukle();
+}
+
+async function shotKaydet() {
+  const kayit = { kalipNo: formDegeri('sKalipNo').toUpperCase(), ekShot: Number(formDegeri('sShot')) || 0, bakimLimiti: Number(formDegeri('sLimit')) || 0 };
+  if (!kayit.kalipNo) { alert('Kalıp No zorunludur.'); return; }
+  const sonuc = await gsCagir('saveShotKaydi', { kayit });
+  if (!sonuc.ok) return alert('❌ ' + sonuc.error);
+  alert(`Shot güncellendi. Toplam: ${sonuc.toplamShot} | Kalan: ${sonuc.kalanShot}`); iatfDashboardYukle();
+}
+
+async function revizyonKaydet() {
+  const kayit = { kalipNo: formDegeri('rKalipNo').toUpperCase(), revizyonNo: formDegeri('rRevNo'), aciklama: formDegeri('rAciklama'), onaylayan: formDegeri('rOnaylayan') };
+  if (!kayit.kalipNo || !kayit.revizyonNo || !kayit.aciklama) { alert('Kalıp No, revizyon no ve açıklama zorunludur.'); return; }
+  const sonuc = await gsCagir('saveRevizyonKaydi', { kayit });
+  if (!sonuc.ok) return alert('❌ ' + sonuc.error);
+  alert('Revizyon kaydı oluşturuldu.'); iatfDashboardYukle();
+}
+
+async function dokumanKaydet() {
+  const kayit = { kalipNo: formDegeri('dKalipNo').toUpperCase(), tip: formDegeri('dTip'), url: formDegeri('dUrl') };
+  if (!kayit.kalipNo || !kayit.url) { alert('Kalıp No ve doküman linki zorunludur.'); return; }
+  const sonuc = await gsCagir('saveDokumanKaydi', { kayit });
+  if (!sonuc.ok) return alert('❌ ' + sonuc.error);
+  document.getElementById('dokumanSonuc').innerHTML = `<span class="doc-chip">📎 ${kayit.kalipNo} · ${kayit.tip}</span> kaydedildi.`;
+}
+
+async function aksiyonKaydet() {
+  const kayit = { konu: formDegeri('aKonu'), sorumlu: formDegeri('aSorumlu'), hedefTarih: formDegeri('aHedef'), aciklama: formDegeri('aAciklama'), durum: 'AÇIK' };
+  if (!kayit.konu || !kayit.sorumlu) { alert('Konu ve sorumlu zorunludur.'); return; }
+  const sonuc = await gsCagir('saveAksiyonKaydi', { kayit });
+  if (!sonuc.ok) return alert('❌ ' + sonuc.error);
+  alert('Aksiyon açıldı.'); iatfDashboardYukle();
+}
+
+async function iatfDashboardYukle() {
+  try {
+    const sonuc = await gsCagir('getIatfDashboard');
+    if (!sonuc.ok) return;
+    document.getElementById('dashAktifKalip').textContent = sonuc.aktifKalip || 0;
+    document.getElementById('dashKritikStok').textContent = sonuc.kritikStok || 0;
+    document.getElementById('dashAcikBakim').textContent = sonuc.acikBakim || 0;
+    document.getElementById('dashAcikAksiyon').textContent = sonuc.acikAksiyon || 0;
+  } catch(e) {}
+}
+
+async function iatfRaporlariYukle() {
+  const alan = document.getElementById('iatfRaporAlani');
+  alan.innerHTML = 'Raporlar yükleniyor...';
+  try {
+    const sonuc = await gsCagir('getIatfRapor');
+    if (!sonuc.ok) throw new Error(sonuc.error);
+    alan.innerHTML = `
+      <strong>Denetim Özeti</strong><br><br>
+      Kalıp: ${sonuc.ozet.kalip} · Yedek Parça: ${sonuc.ozet.yedekParca} · Bakım: ${sonuc.ozet.bakim} · Revizyon: ${sonuc.ozet.revizyon} · Doküman: ${sonuc.ozet.dokuman} · Audit: ${sonuc.ozet.audit}<br><br>
+      <strong>Son Audit Trail</strong><br>
+      ${(sonuc.sonAudit || []).map(a => `• ${a.tarih} — ${a.islem} — ${a.detay}`).join('<br>') || 'Kayıt yok.'}
+    `;
+  } catch(err) { alan.innerHTML = 'Rapor alınamadı: ' + err.message; }
+}
+
+window.onload = async function() {
+  await loadKaliplar();
+  await iatfDashboardYukle();
+};
+</script>
+</body>
+</html>
